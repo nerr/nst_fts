@@ -9,6 +9,20 @@
 #property link 		"http://nerrsoft.com"
 
 //-- extern var
+extern string 	indicatorparam = "--------trade param--------";
+extern double 	lots = 1;
+extern int 		stoploss = 20;
+extern double 	g8thold = 2;
+extern string 	maceindicatorparam = "--------indicator param of macd--------";
+extern int 		macdfastema = 12;
+extern int 		macdslowema = 26;
+extern int 		macesma = 9;
+extern string 	kdindicatorparam = "--------indicator param of kd--------";
+extern int 		kperiod = 5;
+extern int 		dperiod = 3;
+extern int 		kdslowing = 3;
+extern string 	g8indicatorparam = "--------indicator param of g8 usd--------";
+
 
 //-- init
 int init()
@@ -29,6 +43,46 @@ int start()
 }
 
 //--
+
+
+
+
+
+
+
+
+
+
+
+/*
+	return int value desc
+	0 - buy singal
+	1 - sell singal
+	9 - no singal
+
+
+*/
+int getSingal()
+{
+	//currency_a = iCustom(NULL, -1, "G8_USD_v1.1", );
+	//currency_b = iCustom(NULL, -1, "G8_USD_v1.1", );
+
+	if(MathAbs(currency_a)>g8thold || MathAbs(currency_b)>g8thold)
+	{
+		if(currency_a>g8thold && currency_b<(-1 * g8thold)
+		{
+			return(1);
+		}
+		else if(currency_a<(-1 * g8thold) && currency_b>g8thold)
+		{
+			return(0);
+		}
+	}
+	else
+	{
+		return(9);
+	}
+}
 
 
 //-- get lots by kd(Stochastic)
@@ -56,6 +110,7 @@ double getLots()
 
 	return(lots);
 }
+
 
 //-- check margin safe or not
 bool checkMarginSafe(int cmd, double lots)
