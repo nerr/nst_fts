@@ -12,7 +12,8 @@
 extern string 	indicatorparam = "--------trade param--------";
 extern double 	lots = 1;
 extern int 		stoploss = 20;
-extern double 	g8thold = 2;
+extern double 	g8thold = 3;
+extern int 		historykline = 15;
 extern string 	maceindicatorparam = "--------indicator param of macd--------";
 extern int 		macdfastema = 12;
 extern int 		macdslowema = 26;
@@ -39,7 +40,17 @@ int deinit()
 //-- start
 int start()
 {
+	int tradesignal = getSingal();
 
+	switch(tradesignal)
+	{
+		case 0:
+			break;
+		case 1:
+			break;
+		default:
+			break;
+	}
 }
 
 //--
@@ -64,19 +75,15 @@ int start()
 */
 int getSingal()
 {
-	//currency_a = iCustom(NULL, -1, "G8_USD_v1.1", );
-	//currency_b = iCustom(NULL, -1, "G8_USD_v1.1", );
+	//double currency_a = iCustom(NULL, -1, "G8_USD_v1.1", );
+	//double currency_b = iCustom(NULL, -1, "G8_USD_v1.1", );
 
-	if(MathAbs(currency_a)>g8thold || MathAbs(currency_b)>g8thold)
+	if((MathAbs(currency_a) + MathAbs(currency_b)) >= g8thold)
 	{
-		if(currency_a>g8thold && currency_b<(-1 * g8thold)
-		{
-			return(1);
-		}
-		else if(currency_a<(-1 * g8thold) && currency_b>g8thold)
-		{
+		if(currency_b > current_a)
 			return(0);
-		}
+		else
+			return(1);
 	}
 	else
 	{
@@ -127,4 +134,31 @@ bool checkMarginSafe(int cmd, double lots)
 		return(true);
 	else
 		return(false);
+}
+
+
+//-- draw a fibonacci
+void drawFibo(int ordertype, int ticket)
+{
+	string objName = "fibo_" + ticket;
+	datetime fiboDate[2];
+	double fiboValue[2];
+
+	//-- get second 
+	fiboDate[1] = iTime(symbol(), 0, 0);
+	if(ordertype==0)
+		fiboValue[1] = iLow(symbol(), 0, 0);
+	else
+		fiboValue[1] = iHigh(symbol(), 0, 0);
+
+	if(ObjectFind(objName)<0)
+	{
+		ObjectCreate(objName, OBJ_FIBO, 0, fiboDate[0], fiboValue[0], fiboDate[1], fiboValue[1]);
+	}
+}
+
+//-- delete a fibonacci
+bool delFibo(int ticket)
+{
+	return(ObjectDelete("fibo_" + ticket));
 }
