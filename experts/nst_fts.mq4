@@ -4,6 +4,7 @@
  * v0.0.0  [dev] 2012-09-03 init.
  * v0.0.1  [dev] 2012-10-15 add drawFibo() and delFibo() func.
  * v0.0.2  [dev] 2012-10-17 rename getLots() func to caluLots(); add getG8Index() func use to auto select index by symbol name.
+ * v0.0.3  [dev] 2012-10-17 confirm main flow path in start() func.
  */
 
 //-- property info
@@ -16,6 +17,7 @@ extern double 	lots = 1;
 extern int 		stoploss = 30;
 extern double 	g8thold = 3;
 extern int 		historykline = 15;
+extern int 		magicnumber = 911;
 extern string 	maceindicatorparam = "--------indicator param of macd--------";
 extern int 		macdfastema = 12;
 extern int 		macdslowema = 26;
@@ -64,59 +66,64 @@ int deinit()
 //-- start
 int start()
 {
-	int tradesignal = getSingal();
+	int direction = 9;
 
-	switch(tradesignal)
-	{
-		case 0:
-			break;
-		case 1:
-			break;
-		default:
-			break;
-	}
-}
-
-//--
-
-
-
-
-
-
-
-
-
-
-
-/*
-	return int value desc
-	0 - buy singal
-	1 - sell singal
-	9 - no singal
-
-
-*/
-int getSingal()
-{
 	double currency_a = iCustom(NULL, -1, "G8_USD_v1.1", index_a, 0);
 	double currency_a = iCustom(NULL, -1, "G8_USD_v1.1", index_b, 0);
 
-	if((MathAbs(currency_a) + MathAbs(currency_b)) >= g8thold)
+	double g8diff = MathAbs(MathAbs(currency_a) - MathAbs(currency_b));
+
+	if(g8diff >= g8thold)
 	{
-		if(currency_b > current_a)
-			return(0);
+		if(currency_a < current_b)
+			direction = 0; //-- 0-buy; 1-sell; 9-nosignal;
 		else
-			return(1);
+			direction = 1;
 	}
-	else
+
+	//--
+	if(direction==0 || direction==1)
 	{
-		return(9);
+		//-- open order if no order, open order if g8diff is bigger than last one and change orders traget.
+		if(OrdersTotal()==0)
+		{
+			//openOrder();
+		}
+		else
+		{
+			double oldG8Diff = 0;
+			for(int i = 0; i < OrdersTotal(); i++)
+			{
+				if (!OrderSelect(i, SELECT_BY_POS, MODE_TRADES))
+				{
+					// todo - no select order
+				}
+				else
+				{
+					if(OrderMagicNumber() == MagicNumber && OrderSymbol()==Symbol())
+					{
+						if(StrToDouble(OrderComment()) > oldG8Diff)
+						{
+							oldG8Diff = StrToDouble(OrderComment());
+						}
+					}
+				}
+			}
+
+			if(oldG8Diff==0)
+			{
+				//openOrder();
+			}
+			else if(oldG8Diff > 0 && (oldG8Diff + 0) <= g8diff)
+			{
+				//openOrder();
+				//adjustOrderTP(); [redraw fibonacci]
+			}
+		}
 	}
 }
 
-
-//-- get lots by kd(Stochastic)
+//-- calculat lots by kd(Stochastic)
 /*
 	look you kd
 
@@ -127,7 +134,7 @@ int getSingal()
 
 	500*1%=5$/20pips=0.025 lots
 */
-double caluLots()
+double calcuLots()
 {
 	double lots, rate, kd;
 
