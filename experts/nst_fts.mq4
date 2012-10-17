@@ -2,6 +2,8 @@
  * 
  * @History
  * v0.0.0  [dev] 2012-09-03 init.
+ * v0.0.1  [dev] 2012-10-15 add drawFibo() and delFibo() func.
+ * v0.0.2  [dev] 2012-10-17 rename getLots() func to caluLots(); add getG8Index() func use to auto select index by symbol name.
  */
 
 //-- property info
@@ -11,7 +13,7 @@
 //-- extern var
 extern string 	indicatorparam = "--------trade param--------";
 extern double 	lots = 1;
-extern int 		stoploss = 20;
+extern int 		stoploss = 30;
 extern double 	g8thold = 3;
 extern int 		historykline = 15;
 extern string 	maceindicatorparam = "--------indicator param of macd--------";
@@ -24,11 +26,33 @@ extern int 		dperiod = 3;
 extern int 		kdslowing = 3;
 extern string 	g8indicatorparam = "--------indicator param of g8 usd--------";
 
+//-- define var
+#define EUR 0
+#define GBP 1
+#define AUD 2
+#define CAD 3
+#define CHF 4
+#define JPY 5
+#define USD 6
+#define NZD 7
+
+//-- global var
+string pair_a, pair_b;
+int index_a, index_b;
 
 //-- init
 int init()
 {
+	pair_a = StringSubstr(Symbol(), 0, 3);
+	pair_b = StringSubstr(Symbol(), 3, 3);
 
+	index_a = getG8Index(pair_a);
+	index_b = getG8Index(pair_b);
+
+	if(index_a>7 || index_b>7)
+		outputLog("Do not support current symbol!", "ERROR");
+
+	return(0);
 }
 
 //-- deinit
@@ -75,8 +99,8 @@ int start()
 */
 int getSingal()
 {
-	//double currency_a = iCustom(NULL, -1, "G8_USD_v1.1", );
-	//double currency_b = iCustom(NULL, -1, "G8_USD_v1.1", );
+	double currency_a = iCustom(NULL, -1, "G8_USD_v1.1", index_a, 0);
+	double currency_a = iCustom(NULL, -1, "G8_USD_v1.1", index_b, 0);
 
 	if((MathAbs(currency_a) + MathAbs(currency_b)) >= g8thold)
 	{
@@ -103,17 +127,19 @@ int getSingal()
 
 	500*1%=5$/20pips=0.025 lots
 */
-double getLots()
+double caluLots()
 {
-	double lots, rate;
-	double kd = ;
+	double lots, rate, kd;
 
-	if(kd>0.75)
-		rate = 1.75;
-	else if(kd<0.75)
-		rate = 0.75;
+	kd = iCustom(NULL, 0, "Stochastic", kperiod, dperiod, kdslowing, 0, 0);
 
-	lots = (AccountEquity() * rate) / 20;
+	if(kd>75)
+		rate = 0.01;
+	else
+		rate = 0.005;
+
+	lots = (AccountEquity() * rate) / stoploss;
+	lots = StrToDouble(DoubleToStr(lots, 2));
 
 	return(lots);
 }
@@ -130,7 +156,9 @@ bool checkMarginSafe(int cmd, double lots)
 
 	//-- margin level = equity / (equity - free margin)
 	double marginlevel = AccountEquity() / (AccountEquity() - freemargin);
-	if(marginlevel>30) //-- safe margin level set to 3000%
+
+	//-- safe margin level set to 200%
+	if(marginlevel>2)
 		return(true);
 	else
 		return(false);
@@ -161,4 +189,34 @@ void drawFibo(int ordertype, int ticket)
 bool delFibo(int ticket)
 {
 	return(ObjectDelete("fibo_" + ticket));
+}
+
+//- get pair's index in G8 indicator
+int getG8Index(string pair)
+{
+	if(pair=="EUR")
+		return(EUR);
+	else if(pair=="GBP")
+		return(GBP);
+	else if(pair=="USD")
+		return(USD);
+	else if(pair=="AUD")
+		return(AUD);
+	else if(pair=="NZD")
+		return(NZD);
+	else if(pair=="CAD")
+		return(CAD);
+	else if(pair=="CHF")
+		return(CHF);
+	else if(pair=="JPY")
+		return(JPY);
+	else
+		return(9);
+}
+
+//- output trade info (log)
+void outputLog(string logtext, string type="Information")
+{
+	string text = ">>>" + type + ":" + logtext;
+	Print (text);
 }
