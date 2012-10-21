@@ -15,7 +15,7 @@
 extern string 	indicatorparam = "--------trade param--------";
 extern double 	lots = 1;
 extern int 		stoploss = 30;
-extern double 	g8thold = 3;
+extern double 	g8thold = 2;
 extern int 		historykline = 15;
 extern int 		magicnumber = 911;
 extern string 	maceindicatorparam = "--------indicator param of macd--------";
@@ -71,7 +71,7 @@ int start()
 	double currency_a = iCustom(NULL, -1, "G8_USD_v1.1", index_a, 0);
 	double currency_a = iCustom(NULL, -1, "G8_USD_v1.1", index_b, 0);
 
-	double g8diff = MathAbs(MathAbs(currency_a) - MathAbs(currency_b));
+	double g8diff = MathAbs(currency_a - currency_b);
 
 	if(g8diff >= g8thold)
 	{
