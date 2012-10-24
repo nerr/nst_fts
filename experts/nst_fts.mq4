@@ -5,6 +5,7 @@
  * v0.0.1  [dev] 2012-10-15 add drawFibo() and delFibo() func.
  * v0.0.2  [dev] 2012-10-17 rename getLots() func to caluLots(); add getG8Index() func use to auto select index by symbol name.
  * v0.0.3  [dev] 2012-10-17 confirm main flow path in start() func.
+ * v0.0.4  [dev] 2012-10-23 default stop loss change to 20 pips; change g8thold to 4;
  */
 
 //-- property info
@@ -14,8 +15,8 @@
 //-- extern var
 extern string 	indicatorparam = "--------trade param--------";
 extern double 	lots = 1;
-extern int 		stoploss = 30;
-extern double 	g8thold = 2;
+extern int 		stoploss = 20;
+extern double 	g8thold = 4;
 extern int 		historykline = 15;
 extern int 		magicnumber = 911;
 extern string 	maceindicatorparam = "--------indicator param of macd--------";
@@ -63,7 +64,7 @@ int deinit()
 	return(0);
 }
 
-//-- start
+//-- start  **not complete**
 int start()
 {
 	int direction = 9;
@@ -87,7 +88,7 @@ int start()
 		//-- open order if no order, open order if g8diff is bigger than last one and change orders traget.
 		if(OrdersTotal()==0)
 		{
-			//openOrder();
+			//openOrder(direction, g8diff);
 		}
 		else
 		{
@@ -110,11 +111,11 @@ int start()
 				}
 			}
 
-			if(oldG8Diff==0)
+			if(oldG8Diff==0) //-- if current symbol have no order then open order
 			{
 				//openOrder();
 			}
-			else if(oldG8Diff > 0 && (oldG8Diff + 0) <= g8diff)
+			else if(oldG8Diff > 0 && g8diff >= (oldG8Diff + 1))
 			{
 				//openOrder();
 				//adjustOrderTP(); [redraw fibonacci]
@@ -226,4 +227,48 @@ void outputLog(string logtext, string type="Information")
 {
 	string text = ">>>" + type + ":" + logtext;
 	Print (text);
+}
+
+//-- open order func **not complete**
+int openOrder(int _direction, string _comment, int _magicnumber, int _stoploss)
+{
+	color _arrow;
+	double _lots, _price, _sl, _tp;
+
+	_lots = calcuLots();
+
+	if(_direction == 0)
+	{
+		_arrow = Blue;
+		_price = Ask;
+		_sl = _price - _stoploss * point;
+	}
+	else
+	{
+		_arrow = Red;
+		_price = Bid;
+		_sl = _price + _stoploss * point;
+	}
+
+	// _tp = getPriceByFibo(_fiboName);
+
+	int ordert = OrderSend(Symbol(), _direction, _lots, _price, 0, _sl, _tp, _comment, _magicnumber, 0, _arrow);
+
+	return(ordert);
+}
+
+//-- update order take profit func **not complete**
+void updateOrderTP(int _ticket, string _fiboName)
+{
+	// double _newtp = getPriceByFibo(_fiboName);
+
+	OrderSelect(_ticket, SELECT_BY_TICKET);
+
+	OrderModify(_ticket, OrderOpenPrice(), OrderStopLoss(), _newtp, 0, Blue);
+}
+
+//-- get price by fibonacci object ** not complete**
+double getPriceByFibo(string _fiboName)
+{
+
 }
