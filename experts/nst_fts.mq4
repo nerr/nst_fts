@@ -7,6 +7,7 @@
  * v0.0.3  [dev] 2012-10-17 confirm main flow path in start() func.
  * v0.0.4  [dev] 2012-10-23 default stop loss change to 20 pips; change g8thold to 4;
  * v0.0.5  [dev] 2012-10-31 add closeOrder func;
+ * v0.0.6  [dev] 2012-10-31 add getFiboPrice() func use to get fibonacci price;
  */
 
 //-- property info
@@ -173,9 +174,8 @@ bool checkMarginSafe(int cmd, double lots)
 		return(false);
 }
 
-
 //-- draw a fibonacci
-void drawFibo(int ordertype, int ticket)
+void drawFibo(int _ordertype, int _ticket)
 {
 	string objName = "fibo_" + ticket;
 	datetime fiboDate[2];
@@ -183,7 +183,7 @@ void drawFibo(int ordertype, int ticket)
 
 	//-- get second 
 	fiboDate[1] = iTime(symbol(), 0, 0);
-	if(ordertype==0)
+	if(_ordertype==0)
 		fiboValue[1] = iLow(symbol(), 0, 0);
 	else
 		fiboValue[1] = iHigh(symbol(), 0, 0);
@@ -191,6 +191,7 @@ void drawFibo(int ordertype, int ticket)
 	if(ObjectFind(objName)<0)
 	{
 		ObjectCreate(objName, OBJ_FIBO, 0, fiboDate[0], fiboValue[0], fiboDate[1], fiboValue[1]);
+		WindowRedraw();
 	}
 }
 
@@ -300,4 +301,30 @@ void closeOrder(int _ticket, int _percent=100)
 
 		OrderClose(_ticket, closeLots, closePrice, 1, closeArrow);
 	}
+}
+
+//-- use to get fibonacci price
+double getFiboPrice(double _leftprice, double _rightprice, int _level)
+{
+	if(_leftprice<=0 || _rightprice<=0)
+		return(0);
+
+	double fiboPrice, fiboPercent;
+	switch(_level)
+	{
+		case 0: fiboPercent = 0.000; break;
+		case 1: fiboPercent = 0.236; break;
+		case 2: fiboPercent = 0.382; break; //--
+		case 3: fiboPercent = 0.500; break;
+		case 4: fiboPercent = 0.618; break; //-- 
+		case 5: fiboPercent = 0.764; break;
+		case 6: fiboPercent = 1.000; break;
+	}
+
+	if(_leftprice > _rightprice)
+		fiboPrice = _rightprice + ((_leftprice - _rightprice)) * fiboPercent);
+	else
+		fiboPrice = _rightprice - ((_rightprice - _leftprice)) * fiboPercent);
+
+	return(fiboPrice);
 }
