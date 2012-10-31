@@ -1,4 +1,4 @@
-/* Nerr SmartTrader - Multi Broker Trader - Slave
+/* Nerr SmartTrader - Fibonacci Retracement Trading System
  * 
  * @History
  * v0.0.0  [dev] 2012-09-03 init.
@@ -6,6 +6,7 @@
  * v0.0.2  [dev] 2012-10-17 rename getLots() func to caluLots(); add getG8Index() func use to auto select index by symbol name.
  * v0.0.3  [dev] 2012-10-17 confirm main flow path in start() func.
  * v0.0.4  [dev] 2012-10-23 default stop loss change to 20 pips; change g8thold to 4;
+ * v0.0.5  [dev] 2012-10-31 add closeOrder func;
  */
 
 //-- property info
@@ -271,4 +272,32 @@ void updateOrderTP(int _ticket, string _fiboName)
 double getPriceByFibo(string _fiboName)
 {
 
+}
+
+
+//-- close order func
+void closeOrder(int _ticket, int _percent=100)
+{
+	color closeArrow;
+	double closePrice, closeLots;
+	if (OrderSelect(_ticket, SELECT_BY_TICKET, MODE_TRADES))
+	{
+		if(OrderType()==OP_BUY)
+		{
+			closeArrow = Blue;
+			closePrice = Ask;
+		}
+		else
+		{
+			closeArrow = Red;
+			closePrice = Bid;
+		}
+
+		if(_percent==100)
+			closeLots = OrderLots();
+		else
+			closeLots = StrToDouble(DoubleToStr(OrderLots() * (_percent / 100), 2);
+
+		OrderClose(_ticket, closeLots, closePrice, 1, closeArrow);
+	}
 }
