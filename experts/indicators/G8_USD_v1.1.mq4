@@ -24,7 +24,7 @@
 #property indicator_width5 2
 #property indicator_color6 Red
 #property indicator_width6 2
-#property indicator_color7 White
+#property indicator_color7 SaddleBrown
 #property indicator_width7 2
 #property indicator_color8 LightSlateGray
 #property indicator_width8 2
