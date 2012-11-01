@@ -1,4 +1,7 @@
 /*
+  Modified by Leon Zhuang leon@nerrsoft.com
+  v1.4 - change extern var "show_labels" location to the first, use to call it in EA easier.
+
   Modified by Dr Bean
   v1.3 - Added auto pair detection
   v1.2 - Added Alerts
@@ -41,6 +44,9 @@
 #define ALARM_ON 1
 #define ALARM_RESET 2
 
+
+extern bool   show_labels = true;  // Show Colored Labels for currencies displayed in chart.
+
 extern int SMA_variable = 1;
 extern int SMA_base = 10;
 extern int SMA_unit = 60;
@@ -55,7 +61,6 @@ extern bool   show_chf = true;     // Show CHF in chart. Must have 'auto_select 
 extern bool   show_jpy = true;     // Show JPY in chart. Must have 'auto_select = false'.
 extern bool   show_usd = true;     // Show USD in chart. Must have 'auto_select = false'.
 extern bool   show_nzd = true;     // Show USD in chart. Must have 'auto_select = false'.
-extern bool   show_labels = true;  // Show Colored Labels for currencies displayed in chart.
 
 extern string alerts="";
 extern double alert_level=1.0;
