@@ -1,6 +1,6 @@
 # About
 
-Nerr Smart Trader - Fibonacci Trading System 
+Nerr Smart Trader - Fibonacci Retracement Trading System 
 
 
 # License
