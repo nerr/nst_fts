@@ -9,6 +9,7 @@
  * v0.0.5  [dev] 2012-10-31 add closeOrder func;
  * v0.0.6  [dev] 2012-10-31 add getFiboPrice() func use to get fibonacci price;
  * v0.0.7  [dev] 2012-11-01 fix some bug and make it runable;
+ * v0.0.8  [dev] 2012-11-01 finished getKLineNum() func;
  */
 
 //-- property info
@@ -72,8 +73,8 @@ int start()
 {
 	int direction = 9;
 
-	double currency_a = iCustom(NULL, -1, "G8_USD_v1.1", index_a, 0);
-	double currency_b = iCustom(NULL, -1, "G8_USD_v1.1", index_b, 0);
+	double currency_a = iCustom(NULL, -1, "G8_USD", false, index_a, 0);
+	double currency_b = iCustom(NULL, -1, "G8_USD", false, index_b, 0);
 
 	double g8diff = MathAbs(currency_a - currency_b);
 
@@ -184,18 +185,65 @@ void drawFibo(int _ordertype, int _ticket)
 	datetime fiboDate[2];
 	double fiboValue[2];
 
-	//-- get second 
-	fiboDate[1] = iTime(Symbol(), 0, 0);
+	//-- get first param k line number
+	int k = getKLineNum(_ordertype);
+
+	fiboDate[0] = Time[k];
+	fiboDate[1] = Time[0];
 	if(_ordertype==0)
-		fiboValue[1] = iLow(Symbol(), 0, 0);
+	{
+		fiboValue[0] = High[k];
+		fiboValue[1] = Low[0];
+	}
 	else
-		fiboValue[1] = iHigh(Symbol(), 0, 0);
+	{
+		fiboValue[0] = Low[k];
+		fiboValue[1] = High[0];
+	}
 
 	if(ObjectFind(objName)<0)
 	{
 		ObjectCreate(objName, OBJ_FIBO, 0, fiboDate[0], fiboValue[0], fiboDate[1], fiboValue[1]);
 		WindowRedraw();
 	}
+}
+
+int getKLineNum(int _ordertype)
+{
+	
+	double p;
+	int k;
+
+	for(int i = 1; i<=historykline; i++)
+	{
+		if(_ordertype==0)
+		{
+			if(i==1)
+				p = High[1];
+			else
+			{
+				if(High[i] > p)
+				{
+					p = High[i];
+					k = i;
+				}
+			}
+		}
+		else if(_ordertype==1)
+		{
+			if(i==1)
+				p = Low[1];
+			else
+			{
+				if(Low[i] < p)
+				{
+					p = Low[i];
+					k = i;
+				}
+			}
+		}
+	}
+	return(k);
 }
 
 //-- delete a fibonacci
