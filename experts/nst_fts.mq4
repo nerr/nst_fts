@@ -8,6 +8,7 @@
  * v0.0.4  [dev] 2012-10-23 default stop loss change to 20 pips; change g8thold to 4;
  * v0.0.5  [dev] 2012-10-31 add closeOrder func;
  * v0.0.6  [dev] 2012-10-31 add getFiboPrice() func use to get fibonacci price;
+ * v0.0.7  [dev] 2012-11-01 fix some bug and make it runable;
  */
 
 //-- property info
@@ -16,9 +17,9 @@
 
 //-- extern var
 extern string 	indicatorparam = "--------trade param--------";
-extern double 	lots = 1;
-extern int 		stoploss = 20;
-extern double 	g8thold = 4;
+extern double 	lots = 0.01;
+extern int 		stoploss = 30;
+extern double 	g8thold = 2;
 extern int 		historykline = 15;
 extern int 		magicnumber = 911;
 extern string 	maceindicatorparam = "--------indicator param of macd--------";
@@ -72,25 +73,24 @@ int start()
 	int direction = 9;
 
 	double currency_a = iCustom(NULL, -1, "G8_USD_v1.1", index_a, 0);
-	double currency_a = iCustom(NULL, -1, "G8_USD_v1.1", index_b, 0);
+	double currency_b = iCustom(NULL, -1, "G8_USD_v1.1", index_b, 0);
 
 	double g8diff = MathAbs(currency_a - currency_b);
 
+	//--
 	if(g8diff >= g8thold)
 	{
-		if(currency_a < current_b)
+		if(currency_a < currency_b)
 			direction = 0; //-- 0-buy; 1-sell; 9-nosignal;
 		else
 			direction = 1;
-	}
 
-	//--
-	if(direction==0 || direction==1)
-	{
+		outputLog("g8diff:" + g8diff);
+
 		//-- open order if no order, open order if g8diff is bigger than last one and change orders traget.
 		if(OrdersTotal()==0)
 		{
-			//openOrder(direction, g8diff);
+			openOrder(direction, g8diff, magicnumber, stoploss);
 		}
 		else
 		{
@@ -103,7 +103,7 @@ int start()
 				}
 				else
 				{
-					if(OrderMagicNumber() == MagicNumber && OrderSymbol()==Symbol())
+					if(OrderMagicNumber() == magicnumber && OrderSymbol()==Symbol())
 					{
 						if(StrToDouble(OrderComment()) > oldG8Diff)
 						{
@@ -115,15 +115,18 @@ int start()
 
 			if(oldG8Diff==0) //-- if current symbol have no order then open order
 			{
-				//openOrder();
+				openOrder(direction, g8diff, magicnumber, stoploss);
 			}
 			else if(oldG8Diff > 0 && g8diff >= (oldG8Diff + 1))
 			{
-				//openOrder();
+				openOrder(direction, g8diff, magicnumber, stoploss);
 				//adjustOrderTP(); [redraw fibonacci]
 			}
 		}
 	}
+
+	//-- display the g8 diff
+	Comment(g8diff);
 }
 
 //-- calculat lots by kd(Stochastic)
@@ -177,16 +180,16 @@ bool checkMarginSafe(int cmd, double lots)
 //-- draw a fibonacci
 void drawFibo(int _ordertype, int _ticket)
 {
-	string objName = "fibo_" + ticket;
+	string objName = "fibo_" + _ticket;
 	datetime fiboDate[2];
 	double fiboValue[2];
 
 	//-- get second 
-	fiboDate[1] = iTime(symbol(), 0, 0);
+	fiboDate[1] = iTime(Symbol(), 0, 0);
 	if(_ordertype==0)
-		fiboValue[1] = iLow(symbol(), 0, 0);
+		fiboValue[1] = iLow(Symbol(), 0, 0);
 	else
-		fiboValue[1] = iHigh(symbol(), 0, 0);
+		fiboValue[1] = iHigh(Symbol(), 0, 0);
 
 	if(ObjectFind(objName)<0)
 	{
@@ -243,13 +246,13 @@ int openOrder(int _direction, string _comment, int _magicnumber, int _stoploss)
 	{
 		_arrow = Blue;
 		_price = Ask;
-		_sl = _price - _stoploss * point;
+		_sl = _price - _stoploss * Point;
 	}
 	else
 	{
 		_arrow = Red;
 		_price = Bid;
-		_sl = _price + _stoploss * point;
+		_sl = _price + _stoploss * Point;
 	}
 
 	// _tp = getPriceByFibo(_fiboName);
@@ -266,7 +269,7 @@ void updateOrderTP(int _ticket, string _fiboName)
 
 	OrderSelect(_ticket, SELECT_BY_TICKET);
 
-	OrderModify(_ticket, OrderOpenPrice(), OrderStopLoss(), _newtp, 0, Blue);
+	//OrderModify(_ticket, OrderOpenPrice(), OrderStopLoss(), _newtp, 0, Blue);
 }
 
 //-- get price by fibonacci object ** not complete**
@@ -297,7 +300,7 @@ void closeOrder(int _ticket, int _percent=100)
 		if(_percent==100)
 			closeLots = OrderLots();
 		else
-			closeLots = StrToDouble(DoubleToStr(OrderLots() * (_percent / 100), 2);
+			closeLots = NormalizeDouble(OrderLots() * (_percent / 100), 2);
 
 		OrderClose(_ticket, closeLots, closePrice, 1, closeArrow);
 	}
@@ -310,21 +313,26 @@ double getFiboPrice(double _leftprice, double _rightprice, int _level)
 		return(0);
 
 	double fiboPrice, fiboPercent;
-	switch(_level)
-	{
-		case 0: fiboPercent = 0.000; break;
-		case 1: fiboPercent = 0.236; break;
-		case 2: fiboPercent = 0.382; break; //--
-		case 3: fiboPercent = 0.500; break;
-		case 4: fiboPercent = 0.618; break; //-- 
-		case 5: fiboPercent = 0.764; break;
-		case 6: fiboPercent = 1.000; break;
-	}
+
+	if(_level==0)
+		fiboPercent = 0.000;
+	else if(_level==1)
+		fiboPercent = 0.236;
+	else if(_level==2)
+		fiboPercent = 0.382;
+	else if(_level==3)
+		fiboPercent = 0.500;
+	else if(_level==4)
+		fiboPercent = 0.618;
+	else if(_level==5)
+		fiboPercent = 0.764;
+	else if(_level==6)
+		fiboPercent = 1.000;
 
 	if(_leftprice > _rightprice)
-		fiboPrice = _rightprice + ((_leftprice - _rightprice)) * fiboPercent);
+		fiboPrice = _rightprice + ((_leftprice - _rightprice) * fiboPercent);
 	else
-		fiboPrice = _rightprice - ((_rightprice - _leftprice)) * fiboPercent);
+		fiboPrice = _rightprice - ((_rightprice - _leftprice) * fiboPercent);
 
 	return(fiboPrice);
 }
