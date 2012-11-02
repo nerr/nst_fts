@@ -10,6 +10,7 @@
  * v0.0.6  [dev] 2012-10-31 add getFiboPrice() func use to get fibonacci price;
  * v0.0.7  [dev] 2012-11-01 fix some bug and make it runable;
  * v0.0.8  [dev] 2012-11-01 finished getKLineNum() func;
+ * v0.0.9  [dev] 2012-11-02 add money management swith;
  */
 
 //-- property info
@@ -23,6 +24,7 @@ extern int 		stoploss = 300;
 extern double 	g8thold = 3;
 extern int 		historykline = 15;
 extern int 		magicnumber = 911;
+extern bool		moneymanagment = true;
 extern string 	maceindicatorparam = "--------indicator param of macd--------";
 extern int 		macdfastema = 12;
 extern int 		macdslowema = 26;
@@ -294,7 +296,10 @@ int openOrder(int _direction, string _comment, int _magicnumber, int _stoploss)
 	color _arrow;
 	double _lots, _price, _sl, _tp;
 
-	_lots = calcuLots();
+	if(moneymanagment==true)
+		_lots = calcuLots();
+	else
+		-lots = lots;
 
 	if(_direction == 0)
 	{
