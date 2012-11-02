@@ -19,8 +19,8 @@
 //-- extern var
 extern string 	indicatorparam = "--------trade param--------";
 extern double 	lots = 0.01;
-extern int 		stoploss = 30;
-extern double 	g8thold = 2;
+extern int 		stoploss = 300;
+extern double 	g8thold = 3;
 extern int 		historykline = 15;
 extern int 		magicnumber = 911;
 extern string 	maceindicatorparam = "--------indicator param of macd--------";
@@ -81,17 +81,20 @@ int start()
 	//--
 	if(g8diff >= g8thold)
 	{
+		int orderticket;
+
 		if(currency_a < currency_b)
 			direction = 0; //-- 0-buy; 1-sell; 9-nosignal;
 		else
 			direction = 1;
 
-		outputLog("g8diff:" + g8diff);
+		//outputLog("g8diff:" + g8diff);
 
 		//-- open order if no order, open order if g8diff is bigger than last one and change orders traget.
 		if(OrdersTotal()==0)
 		{
-			openOrder(direction, g8diff, magicnumber, stoploss);
+			orderticket = openOrder(direction, g8diff, magicnumber, stoploss);
+			drawFibo(direction, orderticket);
 		}
 		else
 		{
@@ -116,7 +119,8 @@ int start()
 
 			if(oldG8Diff==0) //-- if current symbol have no order then open order
 			{
-				openOrder(direction, g8diff, magicnumber, stoploss);
+				orderticket = openOrder(direction, g8diff, magicnumber, stoploss);
+				drawFibo(direction, orderticket);
 			}
 			else if(oldG8Diff > 0 && g8diff >= (oldG8Diff + 1))
 			{
@@ -154,6 +158,8 @@ double calcuLots()
 
 	lots = (AccountEquity() * rate) / stoploss;
 	lots = StrToDouble(DoubleToStr(lots, 2));
+
+	lots/=10;
 
 	return(lots);
 }
