@@ -11,6 +11,7 @@
  * v0.0.7  [dev] 2012-11-01 fix some bug and make it runable;
  * v0.0.8  [dev] 2012-11-01 finished getKLineNum() func;
  * v0.0.9  [dev] 2012-11-02 add money management swith;
+ * v0.1.0  [dev] 2012-11-02 add adjustFibo() func use to adjust fibonacci retracement object;
  */
 
 //-- property info
@@ -101,6 +102,7 @@ int start()
 		else
 		{
 			double oldG8Diff = 0;
+			int firstorderticket = 0;
 			for(int i = 0; i < OrdersTotal(); i++)
 			{
 				if (!OrderSelect(i, SELECT_BY_POS, MODE_TRADES))
@@ -111,10 +113,16 @@ int start()
 				{
 					if(OrderMagicNumber() == magicnumber && OrderSymbol()==Symbol())
 					{
+						//-- get max old G8 diff
 						if(StrToDouble(OrderComment()) > oldG8Diff)
 						{
 							oldG8Diff = StrToDouble(OrderComment());
 						}
+						//-- get first order ticket
+						if(firstorderticket == 0)
+							firstorderticket = OrderTicket();
+						else if(firstorderticket < OrderTicket())
+							firstorderticket = OrderTicket();
 					}
 				}
 			}
@@ -124,10 +132,17 @@ int start()
 				orderticket = openOrder(direction, g8diff, magicnumber, stoploss);
 				drawFibo(direction, orderticket);
 			}
-			else if(oldG8Diff > 0 && g8diff >= (oldG8Diff + 1))
+			else if(oldG8Diff > 0 && g8diff >= (oldG8Diff + 1)) //-- if have order and current g8diff > the old max one
 			{
 				openOrder(direction, g8diff, magicnumber, stoploss);
+				adjustFibo(direction, firstorderticket);
 				//adjustOrderTP(); [redraw fibonacci]
+			}
+
+			//-- adjust order tp
+			if(g8diff>oldG8Diff)
+			{
+				drawFibo(direction, orderticket);
 			}
 		}
 	}
@@ -186,36 +201,6 @@ bool checkMarginSafe(int cmd, double lots)
 		return(false);
 }
 
-//-- draw a fibonacci
-void drawFibo(int _ordertype, int _ticket)
-{
-	string objName = "fibo_" + _ticket;
-	datetime fiboDate[2];
-	double fiboValue[2];
-
-	//-- get first param k line number
-	int k = getKLineNum(_ordertype);
-
-	fiboDate[0] = Time[k];
-	fiboDate[1] = Time[0];
-	if(_ordertype==0)
-	{
-		fiboValue[0] = High[k];
-		fiboValue[1] = Low[0];
-	}
-	else
-	{
-		fiboValue[0] = Low[k];
-		fiboValue[1] = High[0];
-	}
-
-	if(ObjectFind(objName)<0)
-	{
-		ObjectCreate(objName, OBJ_FIBO, 0, fiboDate[0], fiboValue[0], fiboDate[1], fiboValue[1]);
-		WindowRedraw();
-	}
-}
-
 int getKLineNum(int _ordertype)
 {
 	
@@ -252,12 +237,6 @@ int getKLineNum(int _ordertype)
 		}
 	}
 	return(k);
-}
-
-//-- delete a fibonacci
-bool delFibo(int ticket)
-{
-	return(ObjectDelete("fibo_" + ticket));
 }
 
 //- get pair's index in G8 indicator
@@ -394,4 +373,62 @@ double getFiboPrice(double _leftprice, double _rightprice, int _level)
 		fiboPrice = _rightprice - ((_rightprice - _leftprice) * fiboPercent);
 
 	return(fiboPrice);
+}
+
+
+
+/*
+	func about fibonacci retracement
+	draw, adjust, delete
+*/
+//-- draw a fibonacci
+void drawFibo(int _direction, int _ticket)
+{
+	string objName = "fibo_" + _ticket;
+	datetime fiboDate[2];
+	double fiboValue[2];
+
+	//-- get first param k line number
+	int k = getKLineNum(_direction);
+
+	fiboDate[0] = Time[k];
+	fiboDate[1] = Time[0];
+	if(_direction==0)
+	{
+		fiboValue[0] = High[k];
+		fiboValue[1] = Low[0];
+	}
+	else
+	{
+		fiboValue[0] = Low[k];
+		fiboValue[1] = High[0];
+	}
+
+	if(ObjectFind(objName)<0)
+	{
+		ObjectCreate(objName, OBJ_FIBO, 0, fiboDate[0], fiboValue[0], fiboDate[1], fiboValue[1]);
+		WindowRedraw();
+	}
+}
+
+//-- adjust a fibonacci
+void adjustFibo(int _direction, int _ticket)
+{
+	double p;
+
+	if(_direction==0)
+		p = Low[0];
+	else
+		p = High[0];
+
+	string objName = "fibo_" + _ticket;
+
+	if(ObjectFind(objName)==0)
+		ObjectMove(objName, 1, Time[0], p);
+}
+
+//-- delete a fibonacci
+bool delFibo(int _ticket)
+{
+	return(ObjectDelete("fibo_" + _ticket));
 }
