@@ -13,6 +13,7 @@
  * v0.0.9  [dev] 2012-11-02 add money management swith;
  * v0.1.0  [dev] 2012-11-02 add adjustFibo() func use to adjust fibonacci retracement object;
  * v0.1.1  [dev] 2012-11-02 add draw finbonacci line switch.
+ * v0.1.2  [dev] 2012-11-03 add adjustTP() func uset to adjust order takeprofit;
  */
 
 //-- property info
@@ -142,7 +143,11 @@ int start()
 			//-- adjust order tp and fibonacci retracement 
 			if(oldG8Diff > 0 && g8diff > oldG8Diff)
 			{
-				if(drawfiboline == true) adjustFibo(direction, firstorderticket);
+				if(drawfiboline == true)
+				{
+					adjustFibo(direction, firstorderticket);
+					adjustTP(direction, firstorderticket);
+				}
 			}
 		}
 	}
@@ -301,21 +306,30 @@ int openOrder(int _direction, string _comment, int _magicnumber, int _stoploss)
 }
 
 //-- update order take profit func **not complete**
-void updateOrderTP(int _ticket, string _fiboName)
+void adjustTP(int _direction, int _ticket)
 {
-	// double _newtp = getPriceByFibo(_fiboName);
+	double takeprofit, leftprice, rightprice;
 
-	OrderSelect(_ticket, SELECT_BY_TICKET);
+	leftprice = ObjectGet("fibo_" + _ticket, 1);
+	rightprice = ObjectGet("fibo_" + _ticket, 3);
 
-	//OrderModify(_ticket, OrderOpenPrice(), OrderStopLoss(), _newtp, 0, Blue);
+	takeprofit = getFiboPrice(leftprice, rightprice, 2);
+
+	for(int i = 0; i < OrdersTotal(); i++)
+	{
+		if (!OrderSelect(i, SELECT_BY_POS, MODE_TRADES))
+		{
+			// todo - no select order
+		}
+		else
+		{
+			if(OrderMagicNumber() == magicnumber && OrderSymbol()==Symbol() && OrderType()==_direction)
+			{
+				OrderModify(_ticket, OrderOpenPrice(), OrderStopLoss(), takeprofit, 0);
+			}
+		}
+	}
 }
-
-//-- get price by fibonacci object ** not complete**
-double getPriceByFibo(string _fiboName)
-{
-
-}
-
 
 //-- close order func
 void closeOrder(int _ticket, int _percent=100)
@@ -343,39 +357,6 @@ void closeOrder(int _ticket, int _percent=100)
 		OrderClose(_ticket, closeLots, closePrice, 1, closeArrow);
 	}
 }
-
-//-- use to get fibonacci price
-double getFiboPrice(double _leftprice, double _rightprice, int _level)
-{
-	if(_leftprice<=0 || _rightprice<=0)
-		return(0);
-
-	double fiboPrice, fiboPercent;
-
-	if(_level==0)
-		fiboPercent = 0.000;
-	else if(_level==1)
-		fiboPercent = 0.236;
-	else if(_level==2)
-		fiboPercent = 0.382;
-	else if(_level==3)
-		fiboPercent = 0.500;
-	else if(_level==4)
-		fiboPercent = 0.618;
-	else if(_level==5)
-		fiboPercent = 0.764;
-	else if(_level==6)
-		fiboPercent = 1.000;
-
-	if(_leftprice > _rightprice)
-		fiboPrice = _rightprice + ((_leftprice - _rightprice) * fiboPercent);
-	else
-		fiboPrice = _rightprice - ((_rightprice - _leftprice) * fiboPercent);
-
-	return(fiboPrice);
-}
-
-
 
 /*
 	func about fibonacci retracement
@@ -436,4 +417,33 @@ bool delFibo(int _ticket)
 	return(ObjectDelete("fibo_" + _ticket));
 }
 
-//
+//-- use to get fibonacci price
+double getFiboPrice(double _leftprice, double _rightprice, int _level)
+{
+	if(_leftprice<=0 || _rightprice<=0)
+		return(0);
+
+	double fiboPrice, fiboPercent;
+
+	if(_level==0)
+		fiboPercent = 0.000;
+	else if(_level==1)
+		fiboPercent = 0.236;
+	else if(_level==2)
+		fiboPercent = 0.382;
+	else if(_level==3)
+		fiboPercent = 0.500;
+	else if(_level==4)
+		fiboPercent = 0.618;
+	else if(_level==5)
+		fiboPercent = 0.764;
+	else if(_level==6)
+		fiboPercent = 1.000;
+
+	if(_leftprice > _rightprice)
+		fiboPrice = _rightprice + ((_leftprice - _rightprice) * fiboPercent);
+	else
+		fiboPrice = _rightprice - ((_rightprice - _leftprice) * fiboPercent);
+
+	return(fiboPrice);
+}
