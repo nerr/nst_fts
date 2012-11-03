@@ -2,6 +2,9 @@
 
 Nerr Smart Trader - Fibonacci Retracement Trading System 
 
+The idea comes from http://www.forexfactory.com/showthread.php?t=212301
+Thanks wjqblog for share his trading model.
+
 
 # License
 
