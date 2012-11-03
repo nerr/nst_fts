@@ -12,6 +12,7 @@
  * v0.0.8  [dev] 2012-11-01 finished getKLineNum() func;
  * v0.0.9  [dev] 2012-11-02 add money management swith;
  * v0.1.0  [dev] 2012-11-02 add adjustFibo() func use to adjust fibonacci retracement object;
+ * v0.1.1  [dev] 2012-11-02 add draw finbonacci line switch.
  */
 
 //-- property info
@@ -26,6 +27,7 @@ extern double 	g8thold = 3;
 extern int 		historykline = 15;
 extern int 		magicnumber = 911;
 extern bool		moneymanagment = true;
+extern bool		drawfiboline = true;
 extern string 	maceindicatorparam = "--------indicator param of macd--------";
 extern int 		macdfastema = 12;
 extern int 		macdslowema = 26;
@@ -97,7 +99,7 @@ int start()
 		if(OrdersTotal()==0)
 		{
 			orderticket = openOrder(direction, g8diff, magicnumber, stoploss);
-			drawFibo(direction, orderticket);
+			if(drawfiboline == true) drawFibo(direction, orderticket);
 		}
 		else
 		{
@@ -111,14 +113,13 @@ int start()
 				}
 				else
 				{
-					if(OrderMagicNumber() == magicnumber && OrderSymbol()==Symbol())
+					if(OrderMagicNumber() == magicnumber && OrderSymbol()==Symbol() && OrderType()==direction)
 					{
-						//-- get max old G8 diff
+						//-- find the last order G8 diff indicator
 						if(StrToDouble(OrderComment()) > oldG8Diff)
-						{
 							oldG8Diff = StrToDouble(OrderComment());
-						}
-						//-- get first order ticket
+
+						//-- find the first order ticket
 						if(firstorderticket == 0)
 							firstorderticket = OrderTicket();
 						else if(firstorderticket < OrderTicket())
@@ -127,22 +128,21 @@ int start()
 				}
 			}
 
-			if(oldG8Diff==0) //-- if current symbol have no order then open order
+			//-- open order
+			if(oldG8Diff==0) //-- if current symbol have no order then open new order
 			{
 				orderticket = openOrder(direction, g8diff, magicnumber, stoploss);
-				drawFibo(direction, orderticket);
+				if(drawfiboline == true) drawFibo(direction, orderticket);
 			}
-			else if(oldG8Diff > 0 && g8diff >= (oldG8Diff + 1)) //-- if have order and current g8diff > the old max one
+			else if(oldG8Diff > 0 && g8diff >= (oldG8Diff + 1)) //-- if have order and current g8diff > the old max one than open order
 			{
 				openOrder(direction, g8diff, magicnumber, stoploss);
-				adjustFibo(direction, firstorderticket);
-				//adjustOrderTP(); [redraw fibonacci]
 			}
 
-			//-- adjust order tp
-			if(g8diff>oldG8Diff)
+			//-- adjust order tp and fibonacci retracement 
+			if(oldG8Diff > 0 && g8diff > oldG8Diff)
 			{
-				drawFibo(direction, orderticket);
+				if(drawfiboline == true) adjustFibo(direction, firstorderticket);
 			}
 		}
 	}
@@ -176,7 +176,7 @@ double calcuLots()
 	lots = (AccountEquity() * rate) / stoploss;
 	lots = StrToDouble(DoubleToStr(lots, 2));
 
-	lots/=10;
+	lots*=5;
 
 	return(lots);
 }
@@ -278,7 +278,7 @@ int openOrder(int _direction, string _comment, int _magicnumber, int _stoploss)
 	if(moneymanagment==true)
 		_lots = calcuLots();
 	else
-		-lots = lots;
+		_lots = lots;
 
 	if(_direction == 0)
 	{
@@ -384,6 +384,9 @@ double getFiboPrice(double _leftprice, double _rightprice, int _level)
 //-- draw a fibonacci
 void drawFibo(int _direction, int _ticket)
 {
+	if(_ticket <= 0)
+		return(0);
+
 	string objName = "fibo_" + _ticket;
 	datetime fiboDate[2];
 	double fiboValue[2];
@@ -432,3 +435,5 @@ bool delFibo(int _ticket)
 {
 	return(ObjectDelete("fibo_" + _ticket));
 }
+
+//
