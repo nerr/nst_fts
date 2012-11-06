@@ -1,6 +1,7 @@
 /*
   Modified by Leon Zhuang leon@nerrsoft.com
   v1.4 - change extern var "show_labels" location to the first, use to call it in EA easier.
+  v1.5 - added 4 indicator_level.
 
   Modified by Dr Bean
   v1.3 - Added auto pair detection
@@ -31,6 +32,10 @@
 #property indicator_level1 0.0
 #property indicator_level2 1.0
 #property indicator_level3 -1.0
+#property indicator_level4 2.0
+#property indicator_level5 -2.0
+#property indicator_level6 3.0
+#property indicator_level7 -3.0
 
 #define EUR 0
 #define GBP 1
