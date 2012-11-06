@@ -16,6 +16,7 @@
  * v0.1.2  [dev] 2012-11-03 add adjustTP() func uset to adjust order takeprofit;
  * v0.1.3  [dev] 2012-11-06 check margin level when open order;
  * v0.1.4  [dev] 2012-11-06 add broker digit check in init() func;
+ * v0.1.5  [dev] 2012-11-06 added more comment; change extern var g8thold from 3 to 4; remove draw fibo switch because it is must; reorder funcs;
  */
 
 //-- property info
@@ -24,13 +25,12 @@
 
 //-- extern var
 extern string 	indicatorparam = "--------trade param--------";
-extern double 	lots = 0.01;
+extern double 	baselots = 0.01;
 extern int 		stoploss = 30;
-extern double 	g8thold = 3;
+extern double 	g8thold = 4;
 extern int 		historykline = 30;
 extern int 		magicnumber = 911;
 extern bool		moneymanagment = true;
-extern bool		drawfiboline = true;
 extern string 	maceindicatorparam = "--------indicator param of macd--------";
 extern int 		macdfastema = 12;
 extern int 		macdslowema = 26;
@@ -58,15 +58,19 @@ int index_a, index_b;
 //-- init
 int init()
 {
+	//-- split symbol to two currencies
 	pair_a = StringSubstr(Symbol(), 0, 3);
 	pair_b = StringSubstr(Symbol(), 3, 3);
 
+	//-- get currency index number in G8_USD indicator 
 	index_a = getG8Index(pair_a);
 	index_b = getG8Index(pair_b);
 
+	//-- confirm sybmol is useable or not
 	if(index_a>7 || index_b>7)
 		outputLog("Do not support current symbol!", "ERROR");
 
+	//-- confirm broker digit and revise the stoploss value
 	if(Digits % 2 == 1)
 		stoploss *= 10;
 
@@ -82,30 +86,32 @@ int deinit()
 //-- start  **not complete**
 int start()
 {
+	//-- init order direction (0-buy; 1-sell; 9-nosignal;)
 	int direction = 9;
 
+	//-- get current G8_USD indicator value of the two curreycies
 	double currency_a = iCustom(NULL, -1, "G8_USD", false, index_a, 0);
 	double currency_b = iCustom(NULL, -1, "G8_USD", false, index_b, 0);
 
+	//-- get the the diff of indicator 
 	double g8diff = MathAbs(currency_a - currency_b);
 
-	//--
+	//-- if diff bigger than the thold (extern var), open order or adjust orders TP and fibonacci retracement
 	if(g8diff >= g8thold)
 	{
 		int orderticket;
 
+		//-- confirm order direction
 		if(currency_a < currency_b)
-			direction = 0; //-- 0-buy; 1-sell; 9-nosignal;
+			direction = 0; 
 		else
 			direction = 1;
-
-		//outputLog("g8diff:" + g8diff);
 
 		//-- open order if no order, open order if g8diff is bigger than last one and change orders traget.
 		if(OrdersTotal()==0)
 		{
 			orderticket = openOrder(direction, g8diff, magicnumber, stoploss);
-			if(drawfiboline == true) drawFibo(direction, orderticket);
+			if(orderticket > 0) drawFibo(direction, orderticket);
 		}
 		else
 		{
@@ -113,11 +119,7 @@ int start()
 			int firstorderticket = 0;
 			for(int i = 0; i < OrdersTotal(); i++)
 			{
-				if (!OrderSelect(i, SELECT_BY_POS, MODE_TRADES))
-				{
-					// todo - no select order
-				}
-				else
+				if(OrderSelect(i, SELECT_BY_POS, MODE_TRADES))
 				{
 					if(OrderMagicNumber() == magicnumber && OrderSymbol()==Symbol() && OrderType()==direction)
 					{
@@ -138,7 +140,7 @@ int start()
 			if(oldG8Diff==0) //-- if current symbol have no order then open new order
 			{
 				orderticket = openOrder(direction, g8diff, magicnumber, stoploss);
-				if(drawfiboline == true) drawFibo(direction, orderticket);
+				if(orderticket > 0) drawFibo(direction, orderticket);
 			}
 			else if(oldG8Diff > 0 && g8diff >= (oldG8Diff + 1)) //-- if have order and current g8diff > the old max one than open order
 			{
@@ -146,19 +148,56 @@ int start()
 			}
 
 			//-- adjust order tp and fibonacci retracement 
-			if(oldG8Diff > 0 && g8diff > oldG8Diff)
+			if(oldG8Diff > 0 && g8diff > oldG8Diff && firstorderticket > 0)
 			{
-				if(drawfiboline == true)
-				{
-					adjustFibo(direction, firstorderticket);
-					adjustTP(direction, firstorderticket);
-				}
+				adjustFibo(direction, firstorderticket);
+				adjustTP(direction, firstorderticket);
 			}
 		}
 	}
 
 	//-- display the g8 diff
 	Comment(g8diff);
+}
+
+
+/*
+	order managment
+*/
+
+//-- open order func **not complete**
+int openOrder(int _direction, string _comment, int _magicnumber, int _stoploss)
+{
+	color _arrow;
+	double _lots, _price, _sl, _tp;
+
+	_lots = calcuLots();
+
+	//-- check margin level
+	if(checkMarginSafe(_direction, _lots)==false)
+	{
+		outputLog("Out of safe margin level!");
+		return (0);
+	}
+
+	if(_direction == 0)
+	{
+		_arrow = Blue;
+		_price = Ask;
+		_sl = _price - _stoploss * Point;
+	}
+	else
+	{
+		_arrow = Red;
+		_price = Bid;
+		_sl = _price + _stoploss * Point;
+	}
+
+	// _tp = getPriceByFibo(_fiboName);
+
+	int ordert = OrderSend(Symbol(), _direction, _lots, _price, 0, _sl, _tp, _comment, _magicnumber, 0, _arrow);
+
+	return(ordert);
 }
 
 //-- calculat lots by kd(Stochastic)
@@ -174,6 +213,9 @@ int start()
 */
 double calcuLots()
 {
+	if(moneymanagment==false)
+		return(baselots);
+
 	double lots, rate, kd;
 
 	kd = iCustom(NULL, 0, "Stochastic", kperiod, dperiod, kdslowing, 0, 0);
@@ -183,14 +225,14 @@ double calcuLots()
 	else
 		rate = 0.005;
 
-	lots = (AccountEquity() * rate) / stoploss;
-	lots = StrToDouble(DoubleToStr(lots, 2));
-
-	lots*=5;
+	if(AccountFreeMargin()>0)
+	{
+		lots = (AccountFreeMargin() * rate) / stoploss;
+		lots = StrToDouble(DoubleToStr(lots, 2));
+	}
 
 	return(lots);
 }
-
 
 //-- check margin safe or not
 bool checkMarginSafe(int _direction, double _lots)
@@ -213,7 +255,6 @@ bool checkMarginSafe(int _direction, double _lots)
 
 int getKLineNum(int _ordertype)
 {
-	
 	double p;
 	int k;
 
@@ -249,75 +290,7 @@ int getKLineNum(int _ordertype)
 	return(k);
 }
 
-//- get pair's index in G8 indicator
-int getG8Index(string pair)
-{
-	if(pair=="EUR")
-		return(EUR);
-	else if(pair=="GBP")
-		return(GBP);
-	else if(pair=="USD")
-		return(USD);
-	else if(pair=="AUD")
-		return(AUD);
-	else if(pair=="NZD")
-		return(NZD);
-	else if(pair=="CAD")
-		return(CAD);
-	else if(pair=="CHF")
-		return(CHF);
-	else if(pair=="JPY")
-		return(JPY);
-	else
-		return(9);
-}
-
-//- output trade info (log)
-void outputLog(string logtext, string type="Information")
-{
-	string text = ">>>" + type + ":" + logtext;
-	Print (text);
-}
-
-//-- open order func **not complete**
-int openOrder(int _direction, string _comment, int _magicnumber, int _stoploss)
-{
-	color _arrow;
-	double _lots, _price, _sl, _tp;
-
-	if(moneymanagment==true)
-		_lots = calcuLots();
-	else
-		_lots = lots;
-
-	//-- check margin level
-	if(checkMarginSafe(_direction, _lots)==false)
-	{
-		outputLog("Out of safe margin level!");
-		return (0);
-	}
-
-	if(_direction == 0)
-	{
-		_arrow = Blue;
-		_price = Ask;
-		_sl = _price - _stoploss * Point;
-	}
-	else
-	{
-		_arrow = Red;
-		_price = Bid;
-		_sl = _price + _stoploss * Point;
-	}
-
-	// _tp = getPriceByFibo(_fiboName);
-
-	int ordert = OrderSend(Symbol(), _direction, _lots, _price, 0, _sl, _tp, _comment, _magicnumber, 0, _arrow);
-
-	return(ordert);
-}
-
-//-- update order take profit func **not complete**
+//-- update order take profit func 
 void adjustTP(int _direction, int _ticket)
 {
 	double takeprofit, leftprice, rightprice;
@@ -329,11 +302,7 @@ void adjustTP(int _direction, int _ticket)
 
 	for(int i = 0; i < OrdersTotal(); i++)
 	{
-		if (!OrderSelect(i, SELECT_BY_POS, MODE_TRADES))
-		{
-			// todo - no select order
-		}
-		else
+		if (OrderSelect(i, SELECT_BY_POS, MODE_TRADES))
 		{
 			if(OrderMagicNumber() == magicnumber && OrderSymbol()==Symbol() && OrderType()==_direction)
 			{
@@ -368,6 +337,36 @@ void closeOrder(int _ticket, int _percent=100)
 
 		OrderClose(_ticket, closeLots, closePrice, 1, closeArrow);
 	}
+}
+
+//- get currecies index in G8 indicator
+int getG8Index(string pair)
+{
+	if(pair=="EUR")
+		return(EUR);
+	else if(pair=="GBP")
+		return(GBP);
+	else if(pair=="USD")
+		return(USD);
+	else if(pair=="AUD")
+		return(AUD);
+	else if(pair=="NZD")
+		return(NZD);
+	else if(pair=="CAD")
+		return(CAD);
+	else if(pair=="CHF")
+		return(CHF);
+	else if(pair=="JPY")
+		return(JPY);
+	else
+		return(9);
+}
+
+//- output trade info (log)
+void outputLog(string logtext, string type="Information")
+{
+	string text = ">>>" + type + ":" + logtext;
+	Print (text);
 }
 
 /*
