@@ -14,6 +14,7 @@
  * v0.1.0  [dev] 2012-11-02 add adjustFibo() func use to adjust fibonacci retracement object;
  * v0.1.1  [dev] 2012-11-02 add draw finbonacci line switch.
  * v0.1.2  [dev] 2012-11-03 add adjustTP() func uset to adjust order takeprofit;
+ * v0.1.3  [dev] 2012-11-06 check margin level when open order;
  */
 
 //-- property info
@@ -188,9 +189,9 @@ double calcuLots()
 
 
 //-- check margin safe or not
-bool checkMarginSafe(int cmd, double lots)
+bool checkMarginSafe(int _direction, double _lots)
 {
-	double freemargin = AccountFreeMarginCheck(Symbol(), cmd, lots);
+	double freemargin = AccountFreeMarginCheck(Symbol(), _direction, _lots);
 
 	//-- if free margin less than 0 then return false
 	if(freemargin<=0)
@@ -284,6 +285,13 @@ int openOrder(int _direction, string _comment, int _magicnumber, int _stoploss)
 		_lots = calcuLots();
 	else
 		_lots = lots;
+
+	//-- check margin level
+	if(checkMarginSafe(_direction, _lots)==false)
+	{
+		outputLog("Out of safe margin level!");
+		return (0);
+	}
 
 	if(_direction == 0)
 	{
