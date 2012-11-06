@@ -15,6 +15,7 @@
  * v0.1.1  [dev] 2012-11-02 add draw finbonacci line switch.
  * v0.1.2  [dev] 2012-11-03 add adjustTP() func uset to adjust order takeprofit;
  * v0.1.3  [dev] 2012-11-06 check margin level when open order;
+ * v0.1.4  [dev] 2012-11-06 add broker digit check in init() func;
  */
 
 //-- property info
@@ -24,7 +25,7 @@
 //-- extern var
 extern string 	indicatorparam = "--------trade param--------";
 extern double 	lots = 0.01;
-extern int 		stoploss = 300;
+extern int 		stoploss = 30;
 extern double 	g8thold = 3;
 extern int 		historykline = 30;
 extern int 		magicnumber = 911;
@@ -65,6 +66,9 @@ int init()
 
 	if(index_a>7 || index_b>7)
 		outputLog("Do not support current symbol!", "ERROR");
+
+	if(Digits % 2 == 1)
+		stoploss *= 10;
 
 	return(0);
 }
