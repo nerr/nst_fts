@@ -18,6 +18,7 @@
  * v0.1.4  [dev] 2012-11-06 add broker digit check in init() func;
  * v0.1.5  [dev] 2012-11-06 added more comment; change extern var g8thold from 3 to 4; remove draw fibo switch because it is must; reorder funcs;
  * v0.1.6  [dev] 2012-11-07 added tp setup when open order;
+ * v0.1.7  [dev] 2012-11-07 added extern var lotsdigit use to control broker allow min lots digit;
  */
 
 //-- property info
@@ -26,11 +27,12 @@
 
 //-- extern var
 extern string 	indicatorparam = "--------trade param--------";
-extern double 	baselots = 0.01;
+extern double 	baselots = 0.1;
 extern int 		stoploss = 30;
 extern double 	g8thold = 4;
 extern int 		historykline = 30;
 extern int 		magicnumber = 911;
+extern int 		lotsdigit = 2;
 extern bool		moneymanagment = true;
 extern string 	maceindicatorparam = "--------indicator param of macd--------";
 extern int 		macdfastema = 12;
@@ -174,7 +176,7 @@ int openOrder(int _direction, string _comment, int _magicnumber, int _stoploss)
 
 	int k = getKLineNum(_direction);
 
-	_lots = calcuLots();
+	_lots = calcuLots(lotsdigit);
 
 	//-- check margin level
 	if(checkMarginSafe(_direction, _lots)==false)
@@ -216,7 +218,7 @@ int openOrder(int _direction, string _comment, int _magicnumber, int _stoploss)
 
 	500*1%=5$/20pips=0.025 lots
 */
-double calcuLots()
+double calcuLots(int _digit)
 {
 	if(moneymanagment==false)
 		return(baselots);
@@ -233,7 +235,7 @@ double calcuLots()
 	if(AccountFreeMargin()>0)
 	{
 		lots = (AccountFreeMargin() * rate) / stoploss;
-		lots = StrToDouble(DoubleToStr(lots, 2));
+		lots = StrToDouble(DoubleToStr(lots, _digit));
 	}
 
 	return(lots);
