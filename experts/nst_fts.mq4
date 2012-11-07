@@ -156,9 +156,7 @@ int start()
 			}
 		}
 	}
-
-
-
+	
 	//-- display the g8 diff
 	Comment(g8diff);
 }
