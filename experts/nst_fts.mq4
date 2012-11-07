@@ -17,6 +17,7 @@
  * v0.1.3  [dev] 2012-11-06 check margin level when open order;
  * v0.1.4  [dev] 2012-11-06 add broker digit check in init() func;
  * v0.1.5  [dev] 2012-11-06 added more comment; change extern var g8thold from 3 to 4; remove draw fibo switch because it is must; reorder funcs;
+ * v0.1.6  [dev] 2012-11-07 added tp setup when open order;
  */
 
 //-- property info
@@ -144,7 +145,7 @@ int start()
 			}
 			else if(oldG8Diff > 0 && g8diff >= (oldG8Diff + 1)) //-- if have order and current g8diff > the old max one than open order
 			{
-				openOrder(direction, g8diff, magicnumber, stoploss);
+				openOrder(direction, g8diff+"|"+firstorderticket, magicnumber, stoploss);
 			}
 
 			//-- adjust order tp and fibonacci retracement 
@@ -155,6 +156,8 @@ int start()
 			}
 		}
 	}
+
+
 
 	//-- display the g8 diff
 	Comment(g8diff);
@@ -169,7 +172,9 @@ int start()
 int openOrder(int _direction, string _comment, int _magicnumber, int _stoploss)
 {
 	color _arrow;
-	double _lots, _price, _sl, _tp;
+	double _lots, _price, _sl, _tp, _lp;
+
+	int k = getKLineNum(_direction);
 
 	_lots = calcuLots();
 
@@ -183,17 +188,19 @@ int openOrder(int _direction, string _comment, int _magicnumber, int _stoploss)
 	if(_direction == 0)
 	{
 		_arrow = Blue;
+		_lp = High[k];
 		_price = Ask;
 		_sl = _price - _stoploss * Point;
 	}
 	else
 	{
 		_arrow = Red;
+		_lp = Low[k];
 		_price = Bid;
 		_sl = _price + _stoploss * Point;
 	}
 
-	// _tp = getPriceByFibo(_fiboName);
+	_tp = getFiboPrice(_lp, _price, 2);
 
 	int ordert = OrderSend(Symbol(), _direction, _lots, _price, 0, _sl, _tp, _comment, _magicnumber, 0, _arrow);
 
@@ -253,14 +260,14 @@ bool checkMarginSafe(int _direction, double _lots)
 		return(false);
 }
 
-int getKLineNum(int _ordertype)
+int getKLineNum(int _direction)
 {
 	double p;
 	int k;
 
 	for(int i = 1; i<=historykline; i++)
 	{
-		if(_ordertype==0)
+		if(_direction==0)
 		{
 			if(i==1)
 				p = High[1];
@@ -273,7 +280,7 @@ int getKLineNum(int _ordertype)
 				}
 			}
 		}
-		else if(_ordertype==1)
+		else if(_direction==1)
 		{
 			if(i==1)
 				p = Low[1];
