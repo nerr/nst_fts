@@ -1,28 +1,5 @@
-/* Nerr SmartTrader - Fibonacci Retracement Trading System
- * 
- * @History
- * v0.0.0  [dev] 2012-09-03 init.
- * v0.0.1  [dev] 2012-10-15 add drawFibo() and delFibo() func.
- * v0.0.2  [dev] 2012-10-17 rename getLots() func to caluLots(); add getG8Index() func use to auto select index by symbol name.
- * v0.0.3  [dev] 2012-10-17 confirm main flow path in start() func.
- * v0.0.4  [dev] 2012-10-23 default stop loss change to 20 pips; change g8thold to 4;
- * v0.0.5  [dev] 2012-10-31 add closeOrder func;
- * v0.0.6  [dev] 2012-10-31 add getFiboPrice() func use to get fibonacci price;
- * v0.0.7  [dev] 2012-11-01 fix some bug and make it runable;
- * v0.0.8  [dev] 2012-11-01 finished getKLineNum() func;
- * v0.0.9  [dev] 2012-11-02 add money management swith;
- * v0.1.0  [dev] 2012-11-02 add adjustFibo() func use to adjust fibonacci retracement object;
- * v0.1.1  [dev] 2012-11-02 add draw finbonacci line switch.
- * v0.1.2  [dev] 2012-11-03 add adjustTP() func uset to adjust order takeprofit;
- * v0.1.3  [dev] 2012-11-06 check margin level when open order;
- * v0.1.4  [dev] 2012-11-06 add broker digit check in init() func;
- * v0.1.5  [dev] 2012-11-06 added more comment; change extern var g8thold from 3 to 4; remove draw fibo switch because it is must; reorder funcs;
- * v0.1.6  [dev] 2012-11-07 added tp setup when open order;
- * v0.1.7  [dev] 2012-11-07 added extern var lotsdigit use to control broker allow min lots digit;
- */
-
 //-- property info
-#property copyright "Copyright ? 2012 Nerrsoft.com"
+#property copyright "Copyright ? 2014 Nerrsoft.com"
 #property link 		"http://nerrsoft.com"
 
 //-- extern var
